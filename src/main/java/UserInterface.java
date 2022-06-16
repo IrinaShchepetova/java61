@@ -1,28 +1,22 @@
 
-import java.io.IOException;
-import java.util.Scanner;
+import configuration.ApplicationGlobalState;
 
-import static java.lang.System.in;
-import static java.lang.System.out;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Scanner;
 
 public class UserInterface {
 
     private final Controller controller = new Controller();
 
-    public void runApplication() {
-        Scanner scanner = new Scanner(in);
+    public void runApplication() throws SQLException, IOException {
+        Scanner scanner = new Scanner(System.in);
         while (true) {
-            out.println("Введите название города на английском языке");
-            String city = scanner.nextLine();
-
-            setGlobalCity(city);
-
-            out.println("Введите ответ: 1 - Получить текущую погоду, " +
+            System.out.println("Введите ответ: 1 - Получить текущую погоду, " +
                     "2 - Получить погоду на следующие 5 дней, " +
-                    "выход (exit) - завершить работу");
+                    "3 - Получить погоду из базы, или " +
+                    "4 - Чтобы завершить работу");
             String result = scanner.nextLine();
-
-            checkIsExit(result);
 
             try {
                 validateUserInput(result);
@@ -30,26 +24,24 @@ public class UserInterface {
                 e.printStackTrace();
                 continue;
             }
+            checkIsExit(result);
 
+            if (result.equals("1")||result.equals("2")){
+                System.out.println("Введите название города на английском языке");
+                String city = scanner.nextLine();
+                setGlobalCity(city);
+            }
             try {
                 notifyController(result);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
     }
 
-    private void checkIsExit(String result) {
-        if (result.toLowerCase().equals("выход") || result.toLowerCase().equals("exit")) {
-            out.println("Завершаю работу");
-            try {
-                in.close();
-           } catch (IOException e) {
-               e.printStackTrace();
-            }
-            out.close();
-            System.exit(0);
+    private void checkIsExit(String result) throws IOException, SQLException {
+        if (result.equalsIgnoreCase("4")) {
+            controller.exitApp();
         }
     }
 
@@ -62,15 +54,18 @@ public class UserInterface {
         if (userInput == null || userInput.length() != 1) {
             throw new IOException("Incorrect user input: expected one digit as answer, but actually get " + userInput);
         }
-        int answer = 0;
+        int answer;
         try {
             answer = Integer.parseInt(userInput);
+            if (answer>=5){
+                throw new IOException("Incorrect user input: character must be less then 5!");
+            }
         } catch (NumberFormatException e) {
             throw new IOException("Incorrect user input: character is not numeric!");
         }
     }
 
-    private void notifyController(String input) throws IOException {
+    private void notifyController(String input) throws IOException, SQLException {
         controller.onUserInput(input);
     }
 
